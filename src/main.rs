@@ -52,6 +52,7 @@ fn main() {
         for i in 1..=threads {
             let pool = ThreadPoolBuilder::new().num_threads(i).build().unwrap();
             assert_eq!(res, euler1_rayon(input, &pool));
+            mark3_rayon("euler1_rayon", euler1_rayon, input, &pool); // manual benchmark
             println!("euler1_rayon{i}: {}", bench(|| euler1_rayon(input, &pool)));
         }
 
@@ -77,6 +78,32 @@ fn mark3(name: &str, func: fn(i32) -> i64, input: i32) -> i64 {
         let start = std::time::Instant::now();
         for _ in 0..count {
             res += func(input);
+        }
+        let end = std::time::Instant::now();
+        println!(
+            "{}: {}ns, res: {}",
+            name,
+            end.duration_since(start).as_nanos() / count,
+            res
+        );
+    }
+
+    res
+}
+
+fn mark3_rayon(
+    name: &str,
+    func: fn(i32, &ThreadPool) -> i64,
+    input: i32,
+    pool: &ThreadPool,
+) -> i64 {
+    let count = 100;
+    let n = 30;
+    let mut res: i64 = 0;
+    for _ in 0..n {
+        let start = std::time::Instant::now();
+        for _ in 0..count {
+            res += func(input, pool);
         }
         let end = std::time::Instant::now();
         println!(
