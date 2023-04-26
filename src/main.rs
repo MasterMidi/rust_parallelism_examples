@@ -20,9 +20,9 @@ fn main() {
         // (1000, 233168),
         // (10000, 23331668),
         // (100000, 2333316668),
-        // (1000000, 233333166668),
+        (1000000, 233333166668),
         // (10000000, 23333331666668),
-        (100000000, 2333333316666668),
+        // (100000000, 2333333316666668),
         // (1000000000, 233333333166666668),
     ];
 
@@ -31,7 +31,7 @@ fn main() {
         println!("input: {}, res: {}", input, res);
 
         assert_eq!(res, euler1_unpar(input)); // ensure function return correct result
-                                              // mark3("euler1_unpar", euler1_unpar, input); // manual benchmark
+        mark3("euler1_unpar", euler1_unpar, input); // manual benchmark
         println!("euler1_unpar: {}", bench(|| euler1_unpar(input))); // easybench benchmark
 
         // assert_eq!(res, euler1_par(input));
@@ -49,11 +49,11 @@ fn main() {
         //     bench(|| euler1_rayon_native(input))
         // );
 
-        // for i in 1..=threads {
-        //     let pool = ThreadPoolBuilder::new().num_threads(i).build().unwrap();
-        //     assert_eq!(res, euler1_rayon(input, &pool));
-        //     println!("euler1_rayon{i}: {}", bench(|| euler1_rayon(input, &pool)));
-        // }
+        for i in 1..=threads {
+            let pool = ThreadPoolBuilder::new().num_threads(i).build().unwrap();
+            assert_eq!(res, euler1_rayon(input, &pool));
+            println!("euler1_rayon{i}: {}", bench(|| euler1_rayon(input, &pool)));
+        }
 
         for i in 1..=threads {
             let runtime = tokio::runtime::Builder::new_multi_thread()
@@ -82,7 +82,7 @@ fn mark3(name: &str, func: fn(i32) -> i64, input: i32) -> i64 {
         println!(
             "{}: {}µs, res: {}",
             name,
-            end.duration_since(start).as_micros(),
+            end.duration_since(start).as_nanos() / count,
             res
         );
     }
