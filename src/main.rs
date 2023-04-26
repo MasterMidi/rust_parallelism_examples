@@ -111,7 +111,7 @@ fn mark3_rayon(
         }
         let end = std::time::Instant::now();
         println!(
-            "{}: {}µs, res: {}",
+            "{}: {}ns, res: {}",
             name,
             end.duration_since(start).as_nanos() / count,
             res
@@ -138,7 +138,7 @@ fn mark3_tokio(
         }
         let end = std::time::Instant::now();
         println!(
-            "{}: {}µs, res: {}",
+            "{}: {}ns, res: {}",
             name,
             end.duration_since(start).as_nanos() / count,
             res
