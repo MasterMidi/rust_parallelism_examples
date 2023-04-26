@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    thread::{self, JoinHandle},
-};
+use std::thread::{self, JoinHandle};
 
 use easybench::bench;
 use rayon::{
@@ -9,7 +6,7 @@ use rayon::{
     ThreadPool, ThreadPoolBuilder,
 };
 use sysinfo::{CpuRefreshKind, RefreshKind, System, SystemExt};
-use tokio::task::JoinHandle as TokioJoinHandle;
+use tokio::{runtime::Runtime, task::JoinHandle as TokioJoinHandle};
 
 fn main() {
     // setup variables
@@ -52,7 +49,7 @@ fn main() {
         for i in 1..=threads {
             let pool = ThreadPoolBuilder::new().num_threads(i).build().unwrap();
             assert_eq!(res, euler1_rayon(input, &pool));
-            mark3_rayon("euler1_rayon", euler1_rayon, input, &pool); // manual benchmark
+            mark3_rayon(format!("euler1_rayon{i}"), euler1_rayon, input, &pool); // manual benchmark
             println!("euler1_rayon{i}: {}", bench(|| euler1_rayon(input, &pool)));
         }
 
@@ -62,6 +59,13 @@ fn main() {
                 .build()
                 .unwrap();
             assert_eq!(res, euler1_tokio(input, &runtime, i as i32));
+            mark3_tokio(
+                format!("euler1_tokio{i}"),
+                euler1_tokio,
+                input,
+                &runtime,
+                i as i32,
+            ); // manual benchmark
             println!(
                 "euler1_tokio{i}: {}",
                 bench(|| euler1_tokio(input, &runtime, i as i32))
@@ -92,7 +96,7 @@ fn mark3(name: &str, func: fn(i32) -> i64, input: i32) -> i64 {
 }
 
 fn mark3_rayon(
-    name: &str,
+    name: String,
     func: fn(i32, &ThreadPool) -> i64,
     input: i32,
     pool: &ThreadPool,
@@ -104,6 +108,33 @@ fn mark3_rayon(
         let start = std::time::Instant::now();
         for _ in 0..count {
             res += func(input, pool);
+        }
+        let end = std::time::Instant::now();
+        println!(
+            "{}: {}µs, res: {}",
+            name,
+            end.duration_since(start).as_nanos() / count,
+            res
+        );
+    }
+
+    res
+}
+
+fn mark3_tokio(
+    name: String,
+    func: fn(i32, &Runtime, i32) -> i64,
+    input: i32,
+    runtime: &Runtime,
+    thread_count: i32,
+) -> i64 {
+    let count = 100;
+    let n = 30;
+    let mut res: i64 = 0;
+    for _ in 0..n {
+        let start = std::time::Instant::now();
+        for _ in 0..count {
+            res += func(input, runtime, thread_count);
         }
         let end = std::time::Instant::now();
         println!(
