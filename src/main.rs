@@ -70,7 +70,7 @@ fn main() {
 }
 
 fn mark3(name: &str, func: fn(i32) -> i64, input: i32) -> i64 {
-    let count = 1000;
+    let count = 100;
     let n = 30;
     let mut res: i64 = 0;
     for _ in 0..n {
