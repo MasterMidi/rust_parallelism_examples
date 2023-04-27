@@ -6,7 +6,7 @@ use rayon::{
     ThreadPool, ThreadPoolBuilder,
 };
 use sysinfo::{CpuRefreshKind, RefreshKind, System, SystemExt};
-use tokio::{runtime::Runtime, task::JoinHandle as TokioJoinHandle};
+use tokio::{join, runtime::Runtime, task::JoinHandle as TokioJoinHandle};
 
 fn main() {
     // setup variables
@@ -34,11 +34,17 @@ fn main() {
         // assert_eq!(res, euler1_par(input));
         // println!("euler1_par: {}", bench(|| euler1_par(input)));
 
-        // assert_eq!(res, euler1_par_chunk(input, threads as i32));
-        // println!(
-        //     "euler1_par_chunk{threads}: {}",
-        //     bench(|| euler1_par_chunk(input, threads as i32))
-        // );
+        assert_eq!(res, euler1_par_chunk(input, threads as i32));
+        mark3_chunk(
+            "euler1_par_chunk12",
+            euler1_par_chunk,
+            input,
+            threads as i32,
+        );
+        println!(
+            "euler1_par_chunk{threads}: {}",
+            bench(|| euler1_par_chunk(input, threads as i32))
+        );
 
         // assert_eq!(res, euler1_rayon_native(input));
         // println!(
@@ -82,6 +88,27 @@ fn mark3(name: &str, func: fn(i32) -> i64, input: i32) -> i64 {
         let start = std::time::Instant::now();
         for _ in 0..count {
             res += func(input);
+        }
+        let end = std::time::Instant::now();
+        println!(
+            "{}: {}ns, res: {}",
+            name,
+            end.duration_since(start).as_nanos() / count,
+            res
+        );
+    }
+
+    res
+}
+
+fn mark3_chunk(name: &str, func: fn(i32, i32) -> i64, input: i32, thread_count: i32) -> i64 {
+    let count = 100;
+    let n = 30;
+    let mut res: i64 = 0;
+    for _ in 0..n {
+        let start = std::time::Instant::now();
+        for _ in 0..count {
+            res += func(input, thread_count);
         }
         let end = std::time::Instant::now();
         println!(
