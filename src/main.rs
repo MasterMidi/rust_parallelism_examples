@@ -1,4 +1,7 @@
-use std::thread::{self, JoinHandle};
+use std::{
+    sync::Arc,
+    thread::{self, JoinHandle},
+};
 
 use easybench::bench;
 use rayon::{
@@ -14,13 +17,13 @@ fn main() {
     let threads = sys.cpus().len();
 
     let datasets: Vec<(i32, i64)> = vec![
-        // (1000, 233168),
-        // (10000, 23331668),
-        // (100000, 2333316668),
+        (1000, 233168),
+        (10000, 23331668),
+        (100000, 2333316668),
         (1000000, 233333166668),
-        // (10000000, 23333331666668),
-        // (100000000, 2333333316666668),
-        // (1000000000, 233333333166666668),
+        (10000000, 23333331666668),
+        (100000000, 2333333316666668),
+        (1000000000, 233333333166666668),
     ];
 
     // run benchmarks
@@ -29,7 +32,7 @@ fn main() {
 
         assert_eq!(res, euler1_unpar(input)); // ensure function return correct result
         mark3("euler1_unpar", euler1_unpar, input); // manual benchmark
-        println!("euler1_unpar: {}", bench(|| euler1_unpar(input))); // easybench benchmark
+                                                    // println!("euler1_unpar: {}", bench(|| euler1_unpar(input))); // easybench benchmark
 
         // assert_eq!(res, euler1_par(input));
         // println!("euler1_par: {}", bench(|| euler1_par(input)));
@@ -42,10 +45,10 @@ fn main() {
                 input,
                 i as i32,
             ); // manual benchmark
-            println!(
-                "euler1_par_chunk{i}: {}",
-                bench(|| euler1_par_chunk(input, i as i32))
-            );
+               // println!(
+               //     "euler1_par_chunk{i}: {}",
+               //     bench(|| euler1_par_chunk(input, i as i32))
+               // );
         }
 
         // assert_eq!(res, euler1_rayon_native(input));
@@ -57,8 +60,9 @@ fn main() {
         for i in 1..=threads {
             let pool = ThreadPoolBuilder::new().num_threads(i).build().unwrap();
             assert_eq!(res, euler1_rayon(input, &pool));
-            mark3_rayon(format!("euler1_rayon{i}"), euler1_rayon, input, &pool); // manual benchmark
-            println!("euler1_rayon{i}: {}", bench(|| euler1_rayon(input, &pool)));
+            mark3_rayon(format!("euler1_rayon{i}"), euler1_rayon, input, &pool);
+            // manual benchmark
+            // println!("euler1_rayon{i}: {}", bench(|| euler1_rayon(input, &pool)));
         }
 
         for i in 1..=threads {
@@ -74,10 +78,10 @@ fn main() {
                 &runtime,
                 i as i32,
             ); // manual benchmark
-            println!(
-                "euler1_tokio{i}: {}",
-                bench(|| euler1_tokio(input, &runtime, i as i32))
-            );
+               // println!(
+               //     "euler1_tokio{i}: {}",
+               //     bench(|| euler1_tokio(input, &runtime, i as i32))
+               // );
         }
     }
 }
@@ -85,6 +89,8 @@ fn main() {
 fn mark3(name: &str, func: fn(i32) -> i64, input: i32) -> i64 {
     let count = 100;
     let n = 30;
+    let mut st = 0;
+    let mut sst = 0;
     let mut res: i64 = 0;
     for _ in 0..n {
         let start = std::time::Instant::now();
@@ -92,13 +98,13 @@ fn mark3(name: &str, func: fn(i32) -> i64, input: i32) -> i64 {
             res += func(input);
         }
         let end = std::time::Instant::now();
-        println!(
-            "{}: {}ns, res: {}",
-            name,
-            end.duration_since(start).as_nanos() / count,
-            res
-        );
+        let time = end.duration_since(start).as_nanos() / count;
+        st += time;
+        sst += time * time;
     }
+    let mean = st / n;
+    let sdev = (((sst - mean * mean * n) / (n - 1)) as f64).sqrt();
+    println!("{name}: {mean}ns +/- {sdev:.2}");
 
     res
 }
@@ -106,6 +112,8 @@ fn mark3(name: &str, func: fn(i32) -> i64, input: i32) -> i64 {
 fn mark3_chunk(name: String, func: fn(i32, i32) -> i64, input: i32, thread_count: i32) -> i64 {
     let count = 100;
     let n = 30;
+    let mut st = 0;
+    let mut sst = 0;
     let mut res: i64 = 0;
     for _ in 0..n {
         let start = std::time::Instant::now();
@@ -113,13 +121,13 @@ fn mark3_chunk(name: String, func: fn(i32, i32) -> i64, input: i32, thread_count
             res += func(input, thread_count);
         }
         let end = std::time::Instant::now();
-        println!(
-            "{}: {}ns, res: {}",
-            name,
-            end.duration_since(start).as_nanos() / count,
-            res
-        );
+        let time = end.duration_since(start).as_nanos() / count;
+        st += time;
+        sst += time * time;
     }
+    let mean = st / n;
+    let sdev = (((sst - mean * mean * n) / (n - 1)) as f64).sqrt();
+    println!("{name}: {mean}ns +/- {sdev:.2}");
 
     res
 }
@@ -132,6 +140,8 @@ fn mark3_rayon(
 ) -> i64 {
     let count = 100;
     let n = 30;
+    let mut st = 0;
+    let mut sst = 0;
     let mut res: i64 = 0;
     for _ in 0..n {
         let start = std::time::Instant::now();
@@ -139,13 +149,13 @@ fn mark3_rayon(
             res += func(input, pool);
         }
         let end = std::time::Instant::now();
-        println!(
-            "{}: {}ns, res: {}",
-            name,
-            end.duration_since(start).as_nanos() / count,
-            res
-        );
+        let time = end.duration_since(start).as_nanos() / count;
+        st += time;
+        sst += time * time;
     }
+    let mean = st / n;
+    let sdev = (((sst - mean * mean * n) / (n - 1)) as f64).sqrt();
+    println!("{name}: {mean}ns +/- {sdev:.2}");
 
     res
 }
@@ -159,6 +169,8 @@ fn mark3_tokio(
 ) -> i64 {
     let count = 100;
     let n = 30;
+    let mut st = 0;
+    let mut sst = 0;
     let mut res: i64 = 0;
     for _ in 0..n {
         let start = std::time::Instant::now();
@@ -166,13 +178,13 @@ fn mark3_tokio(
             res += func(input, runtime, thread_count);
         }
         let end = std::time::Instant::now();
-        println!(
-            "{}: {}ns, res: {}",
-            name,
-            end.duration_since(start).as_nanos() / count,
-            res
-        );
+        let time = end.duration_since(start).as_nanos() / count;
+        st += time;
+        sst += time * time;
     }
+    let mean = st / n;
+    let sdev = (((sst - mean * mean * n) / (n - 1)) as f64).sqrt();
+    println!("{name}: {mean}ns +/- {sdev:.2}");
 
     res
 }
