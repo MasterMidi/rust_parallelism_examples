@@ -1,7 +1,4 @@
-use std::{
-    sync::Arc,
-    thread::{self, JoinHandle},
-};
+use std::thread::{self, JoinHandle};
 
 use easybench::bench;
 use rayon::{
@@ -9,7 +6,7 @@ use rayon::{
     ThreadPool, ThreadPoolBuilder,
 };
 use sysinfo::{CpuRefreshKind, RefreshKind, System, SystemExt};
-use tokio::{join, runtime::Runtime, task::JoinHandle as TokioJoinHandle};
+use tokio::{runtime::Runtime, task::JoinHandle as TokioJoinHandle};
 
 fn main() {
     // setup variables
@@ -17,13 +14,13 @@ fn main() {
     let threads = sys.cpus().len();
 
     let datasets: Vec<(i32, i64)> = vec![
-        (1000, 233168),
-        (10000, 23331668),
-        (100000, 2333316668),
-        (1000000, 233333166668),
-        (10000000, 23333331666668),
-        (100000000, 2333333316666668),
-        (1000000000, 233333333166666668),
+        (1_000, 233168),
+        (10_000, 23331668),
+        (100_000, 2333316668),
+        (1_000_000, 233333166668),
+        (10_000_000, 23333331666668),
+        (100_000_000, 2333333316666668),
+        // (1_000_000_000, 233333333166666668),
     ];
 
     // run benchmarks
@@ -31,7 +28,7 @@ fn main() {
         println!("input: {}, res: {}", input, res);
 
         assert_eq!(res, euler1_unpar(input)); // ensure function return correct result
-        mark3("euler1_unpar", euler1_unpar, input); // manual benchmark
+        mark4("euler1_unpar", euler1_unpar, input); // manual benchmark
                                                     // println!("euler1_unpar: {}", bench(|| euler1_unpar(input))); // easybench benchmark
 
         // assert_eq!(res, euler1_par(input));
@@ -39,7 +36,7 @@ fn main() {
 
         for i in 1..=threads {
             assert_eq!(res, euler1_par_chunk(input, i as i32));
-            mark3_chunk(
+            mark4_chunk(
                 format!("euler1_par_chunk{i}"),
                 euler1_par_chunk,
                 input,
@@ -60,7 +57,7 @@ fn main() {
         for i in 1..=threads {
             let pool = ThreadPoolBuilder::new().num_threads(i).build().unwrap();
             assert_eq!(res, euler1_rayon(input, &pool));
-            mark3_rayon(format!("euler1_rayon{i}"), euler1_rayon, input, &pool);
+            mark4_rayon(format!("euler1_rayon{i}"), euler1_rayon, input, &pool);
             // manual benchmark
             // println!("euler1_rayon{i}: {}", bench(|| euler1_rayon(input, &pool)));
         }
@@ -71,22 +68,22 @@ fn main() {
                 .build()
                 .unwrap();
             assert_eq!(res, euler1_tokio(input, &runtime, i as i32));
-            mark3_tokio(
+            mark4_tokio(
                 format!("euler1_tokio{i}"),
                 euler1_tokio,
                 input,
                 &runtime,
                 i as i32,
-            ); // manual benchmark
-               // println!(
-               //     "euler1_tokio{i}: {}",
-               //     bench(|| euler1_tokio(input, &runtime, i as i32))
-               // );
+            );
+            // println!(
+            //     "euler1_tokio{i}: {}",
+            //     bench(|| euler1_tokio(input, &runtime, i as i32))
+            // );
         }
     }
 }
 
-fn mark3(name: &str, func: fn(i32) -> i64, input: i32) -> i64 {
+fn mark4(name: &str, func: fn(i32) -> i64, input: i32) -> i64 {
     let count = 100;
     let n = 30;
     let mut st = 0;
@@ -104,12 +101,12 @@ fn mark3(name: &str, func: fn(i32) -> i64, input: i32) -> i64 {
     }
     let mean = st / n;
     let sdev = (((sst - mean * mean * n) / (n - 1)) as f64).sqrt();
-    println!("{name}: {mean}ns +/- {sdev:.2}");
+    println!("{name}: {mean}ns +/- {sdev:.2} -> {res}");
 
     res
 }
 
-fn mark3_chunk(name: String, func: fn(i32, i32) -> i64, input: i32, thread_count: i32) -> i64 {
+fn mark4_chunk(name: String, func: fn(i32, i32) -> i64, input: i32, thread_count: i32) -> i64 {
     let count = 100;
     let n = 30;
     let mut st = 0;
@@ -132,7 +129,7 @@ fn mark3_chunk(name: String, func: fn(i32, i32) -> i64, input: i32, thread_count
     res
 }
 
-fn mark3_rayon(
+fn mark4_rayon(
     name: String,
     func: fn(i32, &ThreadPool) -> i64,
     input: i32,
@@ -160,7 +157,7 @@ fn mark3_rayon(
     res
 }
 
-fn mark3_tokio(
+fn mark4_tokio(
     name: String,
     func: fn(i32, &Runtime, i32) -> i64,
     input: i32,
