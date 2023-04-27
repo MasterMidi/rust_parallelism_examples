@@ -34,17 +34,19 @@ fn main() {
         // assert_eq!(res, euler1_par(input));
         // println!("euler1_par: {}", bench(|| euler1_par(input)));
 
-        assert_eq!(res, euler1_par_chunk(input, threads as i32));
-        mark3_chunk(
-            "euler1_par_chunk12",
-            euler1_par_chunk,
-            input,
-            threads as i32,
-        );
-        println!(
-            "euler1_par_chunk{threads}: {}",
-            bench(|| euler1_par_chunk(input, threads as i32))
-        );
+        for i in 1..=threads {
+            assert_eq!(res, euler1_par_chunk(input, i as i32));
+            mark3_chunk(
+                format!("euler1_par_chunk{i}"),
+                euler1_par_chunk,
+                input,
+                i as i32,
+            ); // manual benchmark
+            println!(
+                "euler1_par_chunk{i}: {}",
+                bench(|| euler1_par_chunk(input, i as i32))
+            );
+        }
 
         // assert_eq!(res, euler1_rayon_native(input));
         // println!(
@@ -101,7 +103,7 @@ fn mark3(name: &str, func: fn(i32) -> i64, input: i32) -> i64 {
     res
 }
 
-fn mark3_chunk(name: &str, func: fn(i32, i32) -> i64, input: i32, thread_count: i32) -> i64 {
+fn mark3_chunk(name: String, func: fn(i32, i32) -> i64, input: i32, thread_count: i32) -> i64 {
     let count = 100;
     let n = 30;
     let mut res: i64 = 0;
